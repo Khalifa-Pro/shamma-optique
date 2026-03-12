@@ -1,0 +1,11 @@
+@media print {
+
+body {
+background: white;
+}
+
+.print\:hidden {
+display: none;
+}
+
+}
