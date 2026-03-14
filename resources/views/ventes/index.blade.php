@@ -8,6 +8,7 @@
         <p class="text-gray-500 text-sm">{{ $ventes->total() }} vente{{ $ventes->total() > 1 ? 's' : '' }}</p>
     </div>
 
+    @if($currentUser->role === 'admin')
     {{-- Stats --}}
     <div class="grid grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-4">
@@ -19,6 +20,7 @@
             <div class="text-xl font-bold text-blue-600">{{ number_format($caMonth, 0, ',', ' ') }} FCFA</div>
         </div>
     </div>
+    @endif
 
     <form method="GET">
         <div class="relative">

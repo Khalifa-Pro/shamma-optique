@@ -11,7 +11,9 @@ return new class extends Migration
         Schema::create('factures', function (Blueprint $table) {
             $table->id();
             $table->string('numero')->unique();
-            $table->foreignId('devis_id')->constrained()->cascadeOnDelete();
+
+            // Peut venir d'un devis OU d'un pro-forma
+            $table->foreignId('devis_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->decimal('montant_total', 10, 2)->default(0);
             $table->decimal('part_client', 10, 2)->default(0);

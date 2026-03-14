@@ -9,13 +9,15 @@ use App\Http\Controllers\DevisController;
 use App\Http\Controllers\FactureController;
 use App\Http\Controllers\VenteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProFormaController;
+use App\Http\Controllers\ProduitController;
 
-// Auth
+// ─── Auth ────────────────────────────────────────────────
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Protected routes
+// ─── Routes protégées ────────────────────────────────────
 Route::middleware('auth.session')->group(function () {
 
     // Dashboard
@@ -58,11 +60,22 @@ Route::middleware('auth.session')->group(function () {
     // Ventes
     Route::get('/ventes', [VenteController::class, 'index'])->name('ventes.index');
 
-    // Utilisateurs (admin only)
+    // PDF / Impression
+    Route::get('/devis/{devis}/pdf',    [DevisController::class,   'pdf'])->name('devis.pdf');
+    Route::get('/factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
+
+    // ─── Admin seulement ─────────────────────────────────
     Route::middleware('admin')->group(function () {
+
+        // Utilisateurs
         Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
         Route::post('/utilisateurs', [UserController::class, 'store'])->name('users.store');
         Route::put('/utilisateurs/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/utilisateurs/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Produits / Stock
+        Route::resource('produits', ProduitController::class);
+        Route::post('produits/{produit}/entree', [ProduitController::class, 'entree'])->name('produits.entree');
+
     });
 });

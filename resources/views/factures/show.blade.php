@@ -21,6 +21,25 @@
                     </div>
                     <a href="{{ route('clients.show', $facture->client) }}" class="text-[#1d9bf0] text-sm hover:underline">{{ $facture->client->full_name }}</a>
                 </div>
+                {{-- Télécharger PDF — seulement si payée --}}
+                @if($facture->statut === 'payee')
+                    <a href="{{ route('factures.pdf', $facture) }}" target="_blank"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Télécharger PDF
+                    </a>
+                @else
+                    <button disabled
+                            class="px-4 py-2 bg-green-100 text-green-300 rounded-lg text-sm cursor-not-allowed flex items-center gap-1.5"
+                            title="Disponible après paiement">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        PDF (après paiement)
+                    </button>
+                @endif
             </div>
             @if($facture->statut === 'en_attente')
                 <button @click="payModal = true" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">

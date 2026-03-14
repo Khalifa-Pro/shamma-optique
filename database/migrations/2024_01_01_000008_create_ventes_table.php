@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('montant_total', 10, 2)->default(0);
             $table->decimal('part_client', 10, 2)->default(0);
             $table->decimal('part_assurance', 10, 2)->default(0);
-            $table->enum('mode_paiement', ['especes', 'carte', 'virement', 'cheque', 'mutuelle'])->default('carte');
+            $table->enum('mode_paiement', ['especes', 'carte', 'virement', 'cheque', 'mutuelle'])->default('especes');
             $table->date('date_paiement');
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

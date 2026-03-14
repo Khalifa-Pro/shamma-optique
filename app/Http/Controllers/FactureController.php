@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Facture;
 use App\Models\Vente;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class FactureController extends Controller
 {
@@ -54,5 +56,17 @@ class FactureController extends Controller
         $facture->update(['statut' => 'payee']);
 
         return redirect()->route('ventes.index')->with('success', 'Paiement enregistré. Vente ' . $vente->numero . ' créée.');
+    }
+
+    public function pdf(Facture $facture)
+    {
+        abort_if($facture->statut !== 'payee', 403, 'La facture doit être payée.');
+
+        $facture->load(['client', 'devis.articles', 'vente']);
+
+        $pdf = Pdf::loadView('factures.pdf', compact('facture'))
+                ->setPaper('a4', 'portrait');
+
+        return $pdf->download($facture->numero . '.pdf');
     }
 }
