@@ -19,30 +19,56 @@
                         <h1 class="text-xl font-bold text-gray-900">{{ $facture->numero }}</h1>
                         <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $facture->statut_color }}">{{ $facture->statut_label }}</span>
                     </div>
-                    <a href="{{ route('clients.show', $facture->client) }}" class="text-[#1d9bf0] text-sm hover:underline">{{ $facture->client->full_name }}</a>
-                </div>
-                {{-- Télécharger PDF — seulement si payée --}}
-                @if($facture->statut === 'payee')
-                    <a href="{{ route('factures.pdf', $facture) }}" target="_blank"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Télécharger PDF
+                    <a href="{{ route('clients.show', $facture->client) }}" class="text-[#1d9bf0] text-sm hover:underline">
+                        {{ $facture->client->full_name }}
                     </a>
-                @else
-                    <button disabled
-                            class="px-4 py-2 bg-green-100 text-green-300 rounded-lg text-sm cursor-not-allowed flex items-center gap-1.5"
-                            title="Disponible après paiement">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        PDF (après paiement)
-                    </button>
-                @endif
+                </div>
+
+                {{-- Boutons PDF + Imprimer --}}
+                <div class="flex items-center gap-2 ml-2">
+                    @if($facture->statut === 'payee')
+                        {{-- PDF --}}
+                        <a href="{{ route('factures.pdf', $facture) }}"
+                        class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            PDF
+                        </a>
+                        {{-- Imprimer --}}
+                        <a href="{{ route('factures.pdf', $facture) }}?print=1" target="_blank"
+                        class="px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            Imprimer
+                        </a>
+                    @else
+                        {{-- PDF désactivé --}}
+                        <button disabled
+                                class="px-3 py-2 bg-green-100 text-green-300 rounded-lg text-sm cursor-not-allowed flex items-center gap-1.5"
+                                title="Disponible après paiement">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            PDF
+                        </button>
+                        {{-- Imprimer désactivé --}}
+                        <button disabled
+                                class="px-3 py-2 bg-gray-100 text-gray-300 rounded-lg text-sm cursor-not-allowed flex items-center gap-1.5"
+                                title="Disponible après paiement">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            Imprimer
+                        </button>
+                    @endif
+                </div>
             </div>
+
             @if($facture->statut === 'en_attente')
-                <button @click="payModal = true" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                <button @click="payModal = true"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
                     Enregistrer paiement
                 </button>
             @endif

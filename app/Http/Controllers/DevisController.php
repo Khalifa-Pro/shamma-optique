@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/DevisController.php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -11,7 +9,6 @@ use App\Models\Ordonnance;
 use App\Models\Facture;
 use App\Models\Produit;
 use Barryvdh\DomPDF\Facade\Pdf;
-
 
 class DevisController extends Controller
 {
@@ -38,23 +35,23 @@ class DevisController extends Controller
 
     public function create(Request $request)
     {
-        $clients    = Client::orderBy('nom')->get();
-        $produits   = Produit::where('actif', true)->orderBy('designation')->get();
-        $selectedClientId      = $request->get('client_id');
-        $selectedOrdonnanceId  = $request->get('ordonnance_id');
+        $clients              = Client::orderBy('nom')->get();
+        $produits             = Produit::where('actif', true)->orderBy('designation')->get();
+        $selectedClientId     = $request->get('client_id');
+        $selectedOrdonnanceId = $request->get('ordonnance_id');
 
         $ordonnances = $selectedClientId
             ? Ordonnance::where('client_id', $selectedClientId)->get()
             : collect();
 
         $articles = [[
-            'designation'  => '',
-            'marque'       => '',
-            'type'         => 'monture',
-            'quantite'     => 1,
-            'prix_unitaire'=> 0,
-            'inclus'       => true,
-            'produit_id'   => null,
+            'designation'   => '',
+            'marque'        => '',
+            'type'          => 'monture',
+            'quantite'      => 1,
+            'prix_unitaire' => 0,
+            'inclus'        => true,
+            'produit_id'    => null,
         ]];
 
         return view('devis.form', [
@@ -71,18 +68,18 @@ class DevisController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'client_id'                    => 'required|exists:clients,id',
-            'ordonnance_id'                => 'nullable|exists:ordonnances,id',
-            'magasin'                      => 'nullable|string|max:100',
-            'notes'                        => 'nullable|string',
-            'articles'                     => 'required|array|min:1',
-            'articles.*.designation'       => 'required|string',
-            'articles.*.type'              => 'required|string',
-            'articles.*.quantite'          => 'required|integer|min:1',
-            'articles.*.prix_unitaire'     => 'required|numeric|min:0',
-            'articles.*.marque'            => 'nullable|string',
-            'articles.*.produit_id'        => 'nullable|exists:produits,id',
-            'articles.*.inclus'            => 'nullable|boolean',
+            'client_id'                => 'required|exists:clients,id',
+            'ordonnance_id'            => 'nullable|exists:ordonnances,id',
+            'magasin'                  => 'nullable|string|max:100',
+            'notes'                    => 'nullable|string',
+            'articles'                 => 'required|array|min:1',
+            'articles.*.designation'   => 'required|string',
+            'articles.*.type'          => 'required|string',
+            'articles.*.quantite'      => 'required|integer|min:1',
+            'articles.*.prix_unitaire' => 'required|numeric|min:0',
+            'articles.*.marque'        => 'nullable|string',
+            'articles.*.produit_id'    => 'nullable|exists:produits,id',
+            'articles.*.inclus'        => 'nullable|boolean',
         ]);
 
         $total = 0;
@@ -93,14 +90,14 @@ class DevisController extends Controller
         }
 
         $devis = Devis::create([
-            'numero'       => Devis::generateNumero(),
-            'client_id'    => $request->client_id,
-            'ordonnance_id'=> $request->ordonnance_id,
-            'magasin'      => $request->magasin,
-            'montant_total'=> $total,
-            'statut'       => 'brouillon',
-            'notes'        => $request->notes,
-            'created_by'   => session('user_id'),
+            'numero'        => Devis::generateNumero(),
+            'client_id'     => $request->client_id,
+            'ordonnance_id' => $request->ordonnance_id,
+            'magasin'       => $request->magasin,
+            'montant_total' => $total,
+            'statut'        => 'brouillon',
+            'notes'         => $request->notes,
+            'created_by'    => session('user_id'),
         ]);
 
         foreach ($request->articles as $a) {
@@ -239,7 +236,6 @@ class DevisController extends Controller
             'created_by'     => session('user_id'),
         ]);
 
-        // Décrémenter le stock pour chaque article lié à un produit
         foreach ($devis->articles as $article) {
             if ($article->produit_id && $article->inclus) {
                 $article->produit->sortie(
@@ -260,12 +256,29 @@ class DevisController extends Controller
         return redirect()->route('factures.show', $facture)->with('success', 'Facture créée.');
     }
 
-    public function pdf(Devis $devis)
+    // ─── Helper logo base64 ──────────────────────────────
+    private function getLogoBase64(): ?string
+    {
+        $path = public_path('asset/img/SHAMMA_OPTIQUE_LOGO.png');
+        return file_exists($path)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($path))
+            : null;
+    }
+
+    public function pdf(Request $request, Devis $devis)
     {
         $devis->load(['client', 'ordonnance', 'articles']);
 
-        $pdf = Pdf::loadView('devis.pdf', compact('devis'))
-                ->setPaper('a4', 'portrait');
+        // Mode impression — navigateur avec auto-print
+        if ($request->get('print') == '1') {
+            return view('devis.print', compact('devis'));
+        }
+
+        // Mode téléchargement — PDF via DomPDF avec logo base64
+        $logoBase64 = $this->getLogoBase64();
+
+        $pdf = Pdf::loadView('devis.pdf', compact('devis', 'logoBase64'))
+                  ->setPaper('a4', 'portrait');
 
         return $pdf->download($devis->numero . '.pdf');
     }

@@ -76,8 +76,11 @@
     <table class="header-table">
         <tr>
             <td style="width: 35%;">
-                <img src="{{ public_path('asset/img/SHAMMA_OPTIQUE_LOGO.png') }}"
-                     class="logo" alt="Shamma Optique">
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" class="logo" alt="Shamma Optique">
+                @else
+                    <div style="font-size: 18px; font-weight: bold; color: #1a5276; padding: 10px 0;">SHAMMA OPTIQUE</div>
+                @endif
             </td>
             <td style="width: 65%; text-align: right;">
                 <div class="bandeau">
