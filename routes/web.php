@@ -77,5 +77,8 @@ Route::middleware('auth.session')->group(function () {
         Route::resource('produits', ProduitController::class);
         Route::post('produits/{produit}/entree', [ProduitController::class, 'entree'])->name('produits.entree');
 
+        // Admin seulement
+        Route::get('/ventes/export', [VenteController::class, 'export'])->name('ventes.export');
+
     });
 });

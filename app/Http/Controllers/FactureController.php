@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Facture;
 use App\Models\Vente;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\LogoService;
 
 class FactureController extends Controller
 {
@@ -78,16 +79,14 @@ class FactureController extends Controller
 
         $facture->load(['client', 'devis.articles', 'vente']);
 
-        // Mode impression — navigateur avec auto-print
         if ($request->get('print') == '1') {
             return view('factures.print', compact('facture'));
         }
 
-        // Mode téléchargement — PDF via DomPDF avec logo base64
-        $logoBase64 = $this->getLogoBase64();
+        $logoBase64 = LogoService::base64();
 
         $pdf = Pdf::loadView('factures.pdf', compact('facture', 'logoBase64'))
-                  ->setPaper('a4', 'portrait');
+                ->setPaper('a4', 'portrait');
 
         return $pdf->download($facture->numero . '.pdf');
     }

@@ -9,6 +9,7 @@ use App\Models\Ordonnance;
 use App\Models\Facture;
 use App\Models\Produit;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\LogoService;
 
 class DevisController extends Controller
 {
@@ -269,16 +270,14 @@ class DevisController extends Controller
     {
         $devis->load(['client', 'ordonnance', 'articles']);
 
-        // Mode impression — navigateur avec auto-print
         if ($request->get('print') == '1') {
             return view('devis.print', compact('devis'));
         }
 
-        // Mode téléchargement — PDF via DomPDF avec logo base64
-        $logoBase64 = $this->getLogoBase64();
+        $logoBase64 = LogoService::base64();
 
         $pdf = Pdf::loadView('devis.pdf', compact('devis', 'logoBase64'))
-                  ->setPaper('a4', 'portrait');
+                ->setPaper('a4', 'portrait');
 
         return $pdf->download($devis->numero . '.pdf');
     }
