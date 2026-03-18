@@ -234,7 +234,7 @@
                 <td class="td-val"><b>{{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA</b></td>
             </tr>
             <tr class="row-alt">
-                <td class="td-label">PART MCI CARE / ASSURANCE</td>
+                <td class="td-label">PART {{ $devis->client->mutuelle }} / ASSURANCE</td>
                 <td class="td-val">
                     {{ $devis->part_assurance > 0 ? number_format($devis->part_assurance, 0, ',', ' ') . ' FCFA' : '—' }}
                 </td>

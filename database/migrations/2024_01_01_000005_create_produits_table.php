@@ -15,7 +15,8 @@ return new class extends Migration
             $table->string('designation');
             $table->string('marque')->nullable();
             $table->enum('categorie', [
-                'monture_adulte',
+                'monture_homme',
+                'monture_femme',
                 'monture_enfant',
                 'monture_solaire',
                 'verre_unifocal',

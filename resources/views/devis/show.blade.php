@@ -16,66 +16,114 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h1 class="text-xl font-bold text-gray-900">{{ $devis->numero }}</h1>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $devis->statut_color }}">{{ $devis->statut_label }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $devis->statut_color }}">
+                        {{ $devis->statut_label }}
+                    </span>
                 </div>
                 <a href="{{ route('clients.show', $devis->client) }}" class="text-[#1d9bf0] text-sm hover:underline">
                     {{ $devis->client->full_name }}
                 </a>
             </div>
+        </div>
 
-            {{-- Boutons PDF + Imprimer --}}
-            <div class="flex items-center gap-2 ml-2">
+        {{-- Boutons actions --}}
+        <div class="flex items-center gap-2 flex-wrap justify-end">
 
-                {{-- Télécharger PDF --}}
-                <a href="{{ route('devis.pdf', $devis) }}"
-                class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1.5">
+            {{-- Télécharger PDF devis --}}
+            <a href="{{ route('devis.pdf', $devis) }}"
+               class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                PDF
+            </a>
+
+            {{-- Imprimer devis --}}
+            <a href="{{ route('devis.pdf', $devis) }}?print=1" target="_blank"
+               class="px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Imprimer
+            </a>
+
+            {{-- Reçu — uniquement si devis validé ou facturé --}}
+            @if(in_array($devis->statut, ['valide', 'facture']))
+
+                {{-- Télécharger reçu PDF --}}
+                <a href="{{ route('devis.recu', $devis) }}"
+                   class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
                     </svg>
-                    PDF
+                    Reçu PDF
                 </a>
 
-                {{-- Imprimer --}}
-                <a href="{{ route('devis.pdf', $devis) }}?print=1" target="_blank"
-                class="px-3 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 flex items-center gap-1.5">
+                {{-- Imprimer reçu --}}
+                <a href="{{ route('devis.recu', $devis) }}?print=1" target="_blank"
+                   class="px-3 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700 flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
-                    Imprimer
+                    Imprimer reçu
                 </a>
 
-            </div>
-        </div>
+            @endif
 
-        <div class="flex gap-2">
+            {{-- Séparateur visuel --}}
+            <div class="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {{-- Modifier --}}
             @if(in_array($devis->statut, ['brouillon', 'valide']))
                 <a href="{{ route('devis.edit', $devis) }}"
-                class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
-                Modifier
+                   class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+                    Modifier
                 </a>
             @endif
+
+            {{-- Valider --}}
             @if($devis->statut === 'brouillon')
                 <form method="POST" action="{{ route('devis.valider', $devis) }}">
                     @csrf
-                    <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                    <button type="submit"
+                            class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
                         Valider
                     </button>
                 </form>
             @endif
+
+            {{-- Facturer --}}
             @if($devis->statut === 'valide')
                 <button @click="factureModal = true"
                         class="px-3 py-2 bg-[#0f2447] text-white rounded-lg text-sm hover:bg-[#1a3a6b]">
                     Facturer
                 </button>
             @endif
+
+            {{-- Voir facture --}}
             @if($devis->statut === 'facture' && $devis->facture)
                 <a href="{{ route('factures.show', $devis->facture) }}"
-                class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                   class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
                     Voir facture
                 </a>
             @endif
+
         </div>
     </div>
+
+    {{-- Flash success --}}
+    @if(session('success'))
+        <div class="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    {{-- Flash error --}}
+    @if(session('error'))
+        <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            {{ session('error') }}
+        </div>
+    @endif
 
     {{-- Infos magasin + validation --}}
     @if($devis->magasin || $devis->valide_at)
@@ -156,9 +204,12 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @foreach($devis->articles as $article)
-                <tr class="{{ !$article->inclus ? 'opacity-50' : '' }}">
+                <tr class="{{ !$article->inclus ? 'opacity-40' : '' }}">
                     <td class="py-2.5 font-medium">
                         {{ $article->designation }}
+                        @if(!$article->inclus)
+                            <span class="ml-1 text-xs text-gray-400 italic">(non inclus)</span>
+                        @endif
                         @if($article->produit && $article->produit->stock_alert)
                             <span class="ml-1 text-xs text-orange-500">⚠ stock faible</span>
                         @endif
@@ -175,7 +226,9 @@
                         @if($article->inclus)
                             {{ number_format($article->total, 0, ',', ' ') }} FCFA
                         @else
-                            <span class="text-gray-400 line-through text-xs">non inclus</span>
+                            <span class="text-gray-400 line-through text-xs">
+                                {{ number_format($article->total, 0, ',', ' ') }} FCFA
+                            </span>
                         @endif
                     </td>
                 </tr>
@@ -183,8 +236,8 @@
             </tbody>
             <tfoot>
                 <tr class="border-t border-gray-200">
-                    <td colspan="5" class="pt-3 text-right font-semibold">Total TTC</td>
-                    <td class="pt-3 text-right text-lg font-bold">
+                    <td colspan="5" class="pt-3 text-right font-semibold text-gray-700">Total TTC</td>
+                    <td class="pt-3 text-right text-lg font-bold text-gray-900">
                         {{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA
                     </td>
                 </tr>
@@ -192,19 +245,39 @@
         </table>
     </div>
 
-    {{-- Répartition si facturé --}}
-    @if($devis->statut === 'facture' && ($devis->part_client || $devis->part_assurance))
+    {{-- Répartition si validé ou facturé --}}
+    @if(in_array($devis->statut, ['valide', 'facture']) && ($devis->part_client > 0 || $devis->part_assurance > 0))
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="font-semibold text-gray-900 mb-3">Répartition du paiement</h3>
         <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-                <span class="text-gray-500">Part assuré</span>
-                <span class="font-medium">{{ number_format($devis->part_client, 0, ',', ' ') }} FCFA</span>
+                <span class="text-gray-500">Montant total</span>
+                <span class="font-medium">{{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA</span>
             </div>
+            @if($devis->part_assurance > 0)
             <div class="flex justify-between">
-                <span class="text-gray-500">Part MCI CARE / Assurance</span>
+                <span class="text-gray-500">Part {{ $devis->client->mutuelle ?? 'Assurance' }}</span>
                 <span class="font-medium">{{ number_format($devis->part_assurance, 0, ',', ' ') }} FCFA</span>
             </div>
+            @endif
+            <div class="flex justify-between border-t border-gray-100 pt-2">
+                <span class="text-gray-700 font-medium">Part assuré (acompte)</span>
+                <span class="font-bold text-gray-900">{{ number_format($devis->part_client, 0, ',', ' ') }} FCFA</span>
+            </div>
+            @php
+                $resteAPayer = max(0, $devis->montant_total - $devis->part_client - $devis->part_assurance);
+            @endphp
+            @if($resteAPayer > 0)
+            <div class="flex justify-between border-t border-gray-100 pt-2">
+                <span class="text-red-600 font-medium">Reste à payer</span>
+                <span class="font-bold text-red-600">{{ number_format($resteAPayer, 0, ',', ' ') }} FCFA</span>
+            </div>
+            @else
+            <div class="flex justify-between border-t border-gray-100 pt-2">
+                <span class="text-green-600 font-medium">Solde</span>
+                <span class="font-bold text-green-600">✓ Réglé</span>
+            </div>
+            @endif
         </div>
     </div>
     @endif
@@ -213,51 +286,134 @@
     @if($devis->notes)
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="text-xs text-gray-400 mb-1">Notes</div>
-        <p class="text-sm">{{ $devis->notes }}</p>
+        <p class="text-sm text-gray-700">{{ $devis->notes }}</p>
     </div>
     @endif
 
 </div>
 
-{{-- Modal Facturer --}}
-<div x-show="factureModal" x-cloak x-transition @click.self="factureModal = false"
+{{-- ═══════════════════════════════════════════════════ --}}
+{{-- Modal Facturer                                      --}}
+{{-- ═══════════════════════════════════════════════════ --}}
+<div x-show="factureModal"
+     x-cloak
+     x-transition.opacity
+     @click.self="factureModal = false"
      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl p-6 max-w-sm w-full">
-        <h3 class="font-semibold text-gray-900 mb-4">Créer une facture</h3>
-        <form method="POST" action="{{ route('devis.facturer', $devis) }}" class="space-y-4">
+
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl"
+         @click.stop>
+
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-900">Créer une facture</h3>
+            <button @click="factureModal = false" class="text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Erreurs de stock --}}
+        @if($errors->has('stock'))
+            <div class="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 space-y-1"
+                 x-init="factureModal = true">
+                <div class="flex items-center gap-2 text-red-700 font-medium text-sm mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    Stock insuffisant
+                </div>
+                @foreach($errors->get('stock') as $erreur)
+                    <p class="text-xs text-red-600">• {{ $erreur }}</p>
+                @endforeach
+            </div>
+        @endif
+
+        <form method="POST"
+              action="{{ route('devis.facturer', $devis) }}"
+              class="space-y-4"
+              x-data="{
+                  total: {{ $devis->montant_total }},
+                  partClient: {{ old('part_client', $devis->montant_total) }},
+                  get partAssurance() {
+                      const diff = this.total - this.partClient;
+                      return diff >= 0 ? diff : 0;
+                  }
+              }">
             @csrf
+
+            {{-- Montant total (lecture seule) --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Montant total</label>
-                <div class="px-3 py-2 bg-gray-50 rounded-lg text-sm font-semibold">
+                <div class="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm font-bold text-gray-900">
                     {{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA
                 </div>
             </div>
+
+            {{-- Part assuré / Part assurance --}}
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Part assuré</label>
-                    <input type="number" name="part_client" step="1" min="0"
-                           value="{{ $devis->montant_total }}"
-                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]" required>
+                    <input type="number"
+                           name="part_client"
+                           step="1" min="0" :max="total"
+                           x-model.number="partClient"
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                           required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Part MCI CARE</label>
-                    <input type="number" name="part_assurance" step="1" min="0" value="0"
-                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        Part {{ $devis->client->mutuelle ?? 'Assurance' }}
+                    </label>
+                    <input type="number"
+                           name="part_assurance"
+                           step="1" min="0"
+                           :value="partAssurance"
+                           x-model.number="partAssurance"
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none"
+                           readonly>
                 </div>
             </div>
+
+            {{-- Barre de répartition visuelle --}}
+            <div>
+                <div class="text-xs text-gray-400 flex justify-between px-1 mb-1.5">
+                    <span>Assuré :
+                        <span class="font-medium text-gray-600"
+                              x-text="partClient.toLocaleString('fr-FR') + ' FCFA'"></span>
+                    </span>
+                    <span>{{ $devis->client->mutuelle ?? 'Assurance' }} :
+                        <span class="font-medium text-gray-600"
+                              x-text="partAssurance.toLocaleString('fr-FR') + ' FCFA'"></span>
+                    </span>
+                </div>
+                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-[#1d9bf0] rounded-full transition-all duration-300"
+                         :style="`width: ${total > 0 ? Math.min((partClient / total) * 100, 100) : 0}%`">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Date d'échéance --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Date d'échéance</label>
-                <input type="date" name="date_echeance" value="{{ now()->addDays(30)->format('Y-m-d') }}"
-                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]" required>
+                <input type="date"
+                       name="date_echeance"
+                       value="{{ old('date_echeance', now()->addDays(30)->format('Y-m-d')) }}"
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                       required>
             </div>
-            <div class="flex gap-3">
-                <button type="button" @click="factureModal = false"
-                        class="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+
+            {{-- Actions --}}
+            <div class="flex gap-3 pt-1">
+                <button type="button"
+                        @click="factureModal = false"
+                        class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
                     Annuler
                 </button>
                 <button type="submit"
-                        class="flex-1 px-4 py-2 bg-[#0f2447] text-white rounded-lg text-sm hover:bg-[#1a3a6b]">
-                    Créer
+                        class="flex-1 px-4 py-2.5 bg-[#0f2447] text-white rounded-lg text-sm hover:bg-[#1a3a6b]">
+                    Créer la facture
                 </button>
             </div>
         </form>

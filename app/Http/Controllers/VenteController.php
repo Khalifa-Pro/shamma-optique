@@ -28,14 +28,19 @@ class VenteController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $totalCA = Vente::sum('montant_total');
-        $caMonth = Vente::whereYear('date_paiement', now()->year)
-                        ->whereMonth('date_paiement', now()->month)
-                        ->sum('montant_total');
+        $totalCA           = Vente::sum('montant_total');
+        $caMonth           = Vente::whereYear('date_paiement', now()->year)
+                                ->whereMonth('date_paiement', now()->month)
+                                ->sum('montant_total');
+        $totalPartClient   = Vente::sum('part_client');
+        $totalPartAssurance = Vente::sum('part_assurance');
 
-        return view('ventes.index', compact('ventes', 'search', 'totalCA', 'caMonth'));
+        return view('ventes.index', compact(
+            'ventes', 'search',
+            'totalCA', 'caMonth',
+            'totalPartClient', 'totalPartAssurance'
+        ));
     }
-
     // ─────────────────────────────────────────────────────
     // EXPORT EXCEL — Admin seulement (protégé par route middleware)
     // ─────────────────────────────────────────────────────

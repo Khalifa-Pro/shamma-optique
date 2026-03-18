@@ -50,7 +50,7 @@
         <select name="categorie" onchange="this.form.submit()"
                 class="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0] bg-white">
             <option value="">Toutes catégories</option>
-            @foreach(['monture_adulte' => 'Monture adulte', 'monture_enfant' => 'Monture enfant', 'monture_solaire' => 'Monture solaire', 'verre_unifocal' => 'Verre unifocal', 'verre_progressif' => 'Verre progressif', 'lentille' => 'Lentille', 'produit_entretien' => 'Produit entretien', 'accessoire' => 'Accessoire'] as $val => $label)
+            @foreach(['monture_homme' => 'Monture homme','monture_femme' => 'Monture femme', 'monture_enfant' => 'Monture enfant', 'monture_solaire' => 'Monture solaire', 'verre_unifocal' => 'Verre unifocal', 'verre_progressif' => 'Verre progressif', 'lentille' => 'Lentille', 'produit_entretien' => 'Produit entretien', 'accessoire' => 'Accessoire'] as $val => $label)
                 <option value="{{ $val }}" {{ ($categorie ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
         </select>

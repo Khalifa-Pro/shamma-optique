@@ -161,40 +161,131 @@
         @click.self="payModal = false"
         class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
-        <div class="bg-white rounded-xl p-6 max-w-sm w-full">
-            <h3 class="font-semibold text-gray-900 mb-4">Enregistrer le paiement</h3>
-            <form method="POST" action="{{ route('factures.payer', $facture) }}" class="space-y-4">
-                @csrf
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Mode de paiement</label>
-                    <select name="mode_paiement" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]" required>
-                        @foreach(['especes' => 'Espèces', 'carte' => 'Carte bancaire', 'virement' => 'Virement', 'cheque' => 'Chèque', 'mutuelle' => 'Mutuelle'] as $val => $label)
-                            <option value="{{ $val }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+        <h3 class="font-semibold text-gray-900 mb-4">Enregistrer le paiement</h3>
+
+        <form method="POST" action="{{ route('factures.payer', $facture) }}" class="space-y-4">
+            @csrf
+
+            {{-- Mode paiement client --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                    Mode de paiement — Part client
+                </label>
+
+                <select name="mode_paiement"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                        required>
+
+                    {{-- Paiements classiques --}}
+                    <optgroup label="Paiements classiques">
+                        <option value="especes">💵 Espèces</option>
+                        <option value="carte">💳 Carte bancaire</option>
+                        <option value="virement">🏦 Virement bancaire</option>
+                        <option value="cheque">📄 Chèque</option>
+                    </optgroup>
+
+                    {{-- Paiement mobile --}}
+                    <optgroup label="📱 Paiement mobile">
+                        <option value="mobile_wave">🔵 Wave</option>
+                        <option value="mobile_orange">🟠 Orange Money</option>
+                        <option value="mobile_mtn">🟡 MTN Money</option>
+                    </optgroup>
+
+                </select>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Montant :
+                    <span class="font-medium text-gray-600">
+                        {{ number_format($facture->part_client, 0, ',', ' ') }} FCFA
+                    </span>
+                </p>
+            </div>
+
+            {{-- Mode paiement assurance — seulement si part_assurance > 0 --}}
+            @if($facture->part_assurance > 0)
+            <div class="border border-blue-100 bg-blue-50/40 rounded-lg p-3 space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                    Mode de paiement —
+                    <span class="text-blue-700">
+                        {{ $facture->client->mutuelle ?? 'Assurance' }}
+                    </span>
+                </label>
+                <select name="mode_paiement_assurance"
+                        class="w-full px-3 py-2 border border-blue-200 bg-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                        required>
+                    <option value="mutuelle">Mutuelle / Tiers payant</option>
+                    <option value="virement">Virement bancaire</option>
+                    <option value="autre">Autre</option>
+                </select>
+                <p class="text-xs text-gray-400">
+                    Montant :
+                    <span class="font-medium text-blue-600">
+                        {{ number_format($facture->part_assurance, 0, ',', ' ') }} FCFA
+                    </span>
+                    @if($facture->client->mutuelle)
+                        —
+                        <span class="text-blue-500">{{ $facture->client->mutuelle }}</span>
+                        @if($facture->client->numero_mutuelle)
+                            ({{ $facture->client->numero_mutuelle }})
+                        @endif
+                    @endif
+                </p>
+            </div>
+            @endif
+
+            {{-- Récap total --}}
+            <div class="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 space-y-1">
+                <div class="flex justify-between">
+                    <span>Part client</span>
+                    <span class="font-medium text-gray-700">
+                        {{ number_format($facture->part_client, 0, ',', ' ') }} FCFA
+                    </span>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Date de paiement</label>
-                    <input type="date" name="date_paiement" value="{{ now()->format('Y-m-d') }}"
-                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]" required>
+                @if($facture->part_assurance > 0)
+                <div class="flex justify-between">
+                    <span>Part assurance</span>
+                    <span class="font-medium text-blue-600">
+                        {{ number_format($facture->part_assurance, 0, ',', ' ') }} FCFA
+                    </span>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
-                    <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"></textarea>
+                @endif
+                <div class="border-t border-gray-200 pt-1 flex justify-between font-semibold text-gray-800 text-sm">
+                    <span>Total TTC</span>
+                    <span>{{ number_format($facture->montant_total, 0, ',', ' ') }} FCFA</span>
                 </div>
-                <div class="flex gap-3">
-                    <button type="button" @click="payModal = false"
-                            class="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
-                        Annuler
-                    </button>
-                    <button type="submit"
-                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
-                        Confirmer
-                    </button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            {{-- Date de paiement --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Date de paiement</label>
+                <input type="date" name="date_paiement"
+                       value="{{ now()->format('Y-m-d') }}"
+                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                       required>
+            </div>
+
+            {{-- Notes --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+                <textarea name="notes" rows="2"
+                          class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                          placeholder="Informations complémentaires..."></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="button" @click="payModal = false"
+                        class="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+                    Annuler
+                </button>
+                <button type="submit"
+                        class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                    Confirmer
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
 </div>
 @endsection

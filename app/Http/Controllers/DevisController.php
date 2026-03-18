@@ -37,7 +37,6 @@ class DevisController extends Controller
     public function create(Request $request)
     {
         $clients              = Client::orderBy('nom')->get();
-        $produits             = Produit::where('actif', true)->orderBy('designation')->get();
         $selectedClientId     = $request->get('client_id');
         $selectedOrdonnanceId = $request->get('ordonnance_id');
 
@@ -45,20 +44,34 @@ class DevisController extends Controller
             ? Ordonnance::where('client_id', $selectedClientId)->get()
             : collect();
 
+        $produits = Produit::where('actif', true)->orderBy('designation')->get();
+
+        $produitsJson = $produits->map(fn($p) => [
+            'id'          => $p->id,
+            'designation' => $p->designation,
+            'marque'      => $p->marque ?? '',
+            'prix_vente'  => (float) $p->prix_vente,
+            'stock'       => $p->stock_actuel,
+            'type'        => str_starts_with($p->categorie, 'monture') ? 'monture'
+                           : (str_starts_with($p->categorie, 'verre')  ? 'verre_droit'
+                           : 'autre'),
+        ]);
+
         $articles = [[
+            'produit_id'    => null,
             'designation'   => '',
             'marque'        => '',
             'type'          => 'monture',
             'quantite'      => 1,
             'prix_unitaire' => 0,
             'inclus'        => true,
-            'produit_id'    => null,
         ]];
 
         return view('devis.form', [
             'devis'                => null,
             'clients'              => $clients,
             'produits'             => $produits,
+            'produitsJson'         => $produitsJson,
             'ordonnances'          => $ordonnances,
             'articles'             => $articles,
             'selectedClientId'     => $selectedClientId,
@@ -131,20 +144,34 @@ class DevisController extends Controller
 
         $devis->load('articles');
         $clients     = Client::orderBy('nom')->get();
-        $produits    = Produit::where('actif', true)->orderBy('designation')->get();
         $ordonnances = Ordonnance::where('client_id', $devis->client_id)->get();
 
+        $produits = Produit::where('actif', true)->orderBy('designation')->get();
+
+        $produitsJson = $produits->map(fn($p) => [
+            'id'          => $p->id,
+            'designation' => $p->designation,
+            'marque'      => $p->marque ?? '',
+            'prix_vente'  => (float) $p->prix_vente,
+            'stock'       => $p->stock_actuel,
+            'type'        => str_starts_with($p->categorie, 'monture') ? 'monture'
+                           : (str_starts_with($p->categorie, 'verre')  ? 'verre_droit'
+                           : 'autre'),
+        ]);
+
         $articles = $devis->articles->map(fn($a) => [
+            'produit_id'    => $a->produit_id,
             'designation'   => $a->designation,
             'marque'        => $a->marque,
             'type'          => $a->type,
             'quantite'      => $a->quantite,
             'prix_unitaire' => (float) $a->prix_unitaire,
             'inclus'        => (bool) $a->inclus,
-            'produit_id'    => $a->produit_id,
         ]);
 
-        return view('devis.form', compact('devis', 'clients', 'produits', 'ordonnances', 'articles'));
+        return view('devis.form', compact(
+            'devis', 'clients', 'produits', 'produitsJson', 'ordonnances', 'articles'
+        ));
     }
 
     public function update(Request $request, Devis $devis)
@@ -225,6 +252,18 @@ class DevisController extends Controller
             'date_echeance'  => 'required|date',
         ]);
 
+        foreach ($devis->articles as $article) {
+            if ($article->produit_id && $article->inclus) {
+                $produit = $article->produit;
+                if ($produit->stock_actuel < $article->quantite) {
+                    return back()->withErrors([
+                        'stock' => "Stock insuffisant pour \"{$produit->designation}\" : "
+                                 . "{$produit->stock_actuel} disponible(s), {$article->quantite} requis."
+                    ]);
+                }
+            }
+        }
+
         $facture = Facture::create([
             'numero'         => Facture::generateNumero(),
             'devis_id'       => $devis->id,
@@ -257,13 +296,37 @@ class DevisController extends Controller
         return redirect()->route('factures.show', $facture)->with('success', 'Facture créée.');
     }
 
-    // ─── Helper logo base64 ──────────────────────────────
-    private function getLogoBase64(): ?string
+    // ─── Reçu de devis validé (acompte) ─────────────────
+    public function recu(Request $request, Devis $devis)
     {
-        $path = public_path('asset/img/SHAMMA_OPTIQUE_LOGO.png');
-        return file_exists($path)
-            ? 'data:image/png;base64,' . base64_encode(file_get_contents($path))
-            : null;
+        // Accessible seulement si le devis est validé ou facturé
+        abort_if(
+            !in_array($devis->statut, ['valide', 'facture']),
+            403,
+            'Le reçu n\'est disponible que pour les devis validés.'
+        );
+
+        $devis->load(['client', 'ordonnance', 'articles']);
+
+        // Calcul de l'acompte (part_client si renseigné, sinon montant total)
+        $acompte      = $devis->part_client > 0 ? $devis->part_client : $devis->montant_total;
+        $partAssurance = $devis->part_assurance ?? 0;
+        $resteAPayer  = max(0, $devis->montant_total - $acompte - $partAssurance);
+
+        $logoBase64 = LogoService::base64();
+
+        if ($request->get('print') == '1') {
+            return view('devis.recu-print', compact(
+                'devis', 'acompte', 'partAssurance', 'resteAPayer', 'logoBase64'
+            ));
+        }
+
+        $pdf = Pdf::loadView('devis.recu-pdf', compact(
+                'devis', 'acompte', 'partAssurance', 'resteAPayer', 'logoBase64'
+            ))
+            ->setPaper([0, 0, 226.77, 453.54], 'portrait'); // 80mm × 160mm (format reçu caisse)
+
+        return $pdf->download('recu-' . $devis->numero . '.pdf');
     }
 
     public function pdf(Request $request, Devis $devis)

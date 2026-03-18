@@ -64,6 +64,9 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/devis/{devis}/pdf',    [DevisController::class,   'pdf'])->name('devis.pdf');
     Route::get('/factures/{facture}/pdf', [FactureController::class, 'pdf'])->name('factures.pdf');
 
+    // recu
+    Route::get('devis/{devis}/recu', [DevisController::class, 'recu'])->name('devis.recu');
+
     // ─── Admin seulement ─────────────────────────────────
     Route::middleware('admin')->group(function () {
 

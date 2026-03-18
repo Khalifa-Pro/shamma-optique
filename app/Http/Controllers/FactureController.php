@@ -38,24 +38,35 @@ class FactureController extends Controller
 
     public function payer(Request $request, Facture $facture)
     {
-        $request->validate([
-            'mode_paiement' => 'required|in:especes,carte,virement,cheque,mutuelle',
+        $modesClient = array_keys(Vente::MODES_CLIENT);
+
+        $rules = [
+            'mode_paiement' => 'required|in:' . implode(',', $modesClient),
             'date_paiement' => 'required|date',
             'notes'         => 'nullable|string',
-        ]);
+        ];
+
+        if ($facture->part_assurance > 0) {
+            $rules['mode_paiement_assurance'] = 'required|in:mutuelle,virement,autre';
+        }
+
+        $request->validate($rules);
 
         $vente = Vente::create([
-            'numero'         => Vente::generateNumero(),
-            'facture_id'     => $facture->id,
-            'devis_id'       => $facture->devis_id,
-            'client_id'      => $facture->client_id,
-            'montant_total'  => $facture->montant_total,
-            'part_client'    => $facture->part_client,
-            'part_assurance' => $facture->part_assurance,
-            'mode_paiement'  => $request->mode_paiement,
-            'date_paiement'  => $request->date_paiement,
-            'notes'          => $request->notes,
-            'created_by'     => session('user_id'),
+            'numero'                  => Vente::generateNumero(),
+            'facture_id'              => $facture->id,
+            'devis_id'                => $facture->devis_id,
+            'client_id'               => $facture->client_id,
+            'montant_total'           => $facture->montant_total,
+            'part_client'             => $facture->part_client,
+            'part_assurance'          => $facture->part_assurance,
+            'mode_paiement'           => $request->mode_paiement,
+            'mode_paiement_assurance' => $facture->part_assurance > 0
+                                            ? $request->mode_paiement_assurance
+                                            : null,
+            'date_paiement'           => $request->date_paiement,
+            'notes'                   => $request->notes,
+            'created_by'              => session('user_id'),
         ]);
 
         $facture->update(['statut' => 'payee']);
@@ -63,16 +74,7 @@ class FactureController extends Controller
         return redirect()->route('ventes.index')
             ->with('success', 'Paiement enregistré. Vente ' . $vente->numero . ' créée.');
     }
-
-    // ─── Helper logo base64 ──────────────────────────────
-    private function getLogoBase64(): ?string
-    {
-        $path = public_path('asset/img/SHAMMA_OPTIQUE_LOGO.png');
-        return file_exists($path)
-            ? 'data:image/png;base64,' . base64_encode(file_get_contents($path))
-            : null;
-    }
-
+    
     public function pdf(Request $request, Facture $facture)
     {
         abort_if($facture->statut !== 'payee', 403, 'La facture doit être payée.');
@@ -86,7 +88,7 @@ class FactureController extends Controller
         $logoBase64 = LogoService::base64();
 
         $pdf = Pdf::loadView('factures.pdf', compact('facture', 'logoBase64'))
-                ->setPaper('a4', 'portrait');
+                  ->setPaper('a4', 'portrait');
 
         return $pdf->download($facture->numero . '.pdf');
     }
