@@ -250,12 +250,18 @@
 
     <div class="signature">Cachet &amp; Signature</div>
 
-    {{-- FOOTER --}}
+   {{-- FOOTER --}}
     <div class="footer">
-        <p><b>Abidjan</b> : Yopougon Ananeraie, Carrefour JEC Promo. Cel : (+225) 07 07 78 40 23 / 05 56 18 31 78</p>
+        <p><b>Abidjan</b> : Yopougon Ananeraie, Carrefour JEC Promo. Tel : (+225) 07 07 78 40 23</p>
+
         <p><b>Man</b> : Quartier koko non loin de l'école koko. Tel : 07 07 78 40 23</p>
-        <p><b>Divo</b> : Quartier bada face à la pharmacie amitié. Tel : 07 59 66 28 47</p>
-        <p>Cel : (+225) 07 47 52 44 86, Tél : (+225) 25 23 00 15 23, Email : <span class="email">shammaoptique9@gmail.com</span></p>
+
+        <p><b>Divo</b> : Quartier badio face à la pharmacie amitié. Tel : 07 59 66 28 47 / 05 84 39 99 31</p>
+
+        <p><b>San Pedro</b> : Quartier de la cité carrefour exac. Tel : 01 03 43 23 45 / 07 77 84 02 3</p>
+
+        <p>Tel : (+225) 25 23 00 15 23, Email : <span class="email">shammaoptique9@gmail.com</span></p>
+
         <p class="rccm">RCCM N° CI-ABJ-2015 A-16105 N° CC 1533222P</p>
     </div>
 

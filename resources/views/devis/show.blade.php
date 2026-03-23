@@ -247,40 +247,39 @@
 
     {{-- Répartition si validé ou facturé --}}
     @if(in_array($devis->statut, ['valide', 'facture']) && ($devis->part_client > 0 || $devis->part_assurance > 0))
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="font-semibold text-gray-900 mb-3">Répartition du paiement</h3>
-        <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-                <span class="text-gray-500">Montant total</span>
-                <span class="font-medium">{{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA</span>
-            </div>
-            @if($devis->part_assurance > 0)
-            <div class="flex justify-between">
-                <span class="text-gray-500">Part {{ $devis->client->mutuelle ?? 'Assurance' }}</span>
-                <span class="font-medium">{{ number_format($devis->part_assurance, 0, ',', ' ') }} FCFA</span>
-            </div>
-            @endif
-            <div class="flex justify-between border-t border-gray-100 pt-2">
-                <span class="text-gray-700 font-medium">Part assuré (acompte)</span>
-                <span class="font-bold text-gray-900">{{ number_format($devis->part_client, 0, ',', ' ') }} FCFA</span>
-            </div>
-            @php
-                $resteAPayer = max(0, $devis->montant_total - $devis->part_client - $devis->part_assurance);
-            @endphp
-            @if($resteAPayer > 0)
-            <div class="flex justify-between border-t border-gray-100 pt-2">
-                <span class="text-red-600 font-medium">Reste à payer</span>
-                <span class="font-bold text-red-600">{{ number_format($resteAPayer, 0, ',', ' ') }} FCFA</span>
-            </div>
-            @else
-            <div class="flex justify-between border-t border-gray-100 pt-2">
-                <span class="text-green-600 font-medium">Solde</span>
-                <span class="font-bold text-green-600">✓ Réglé</span>
-            </div>
+<div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Répartition du paiement</h3>
+    <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+            <span class="text-gray-500">Montant total</span>
+            <span class="font-medium">{{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @if($devis->part_assurance > 0)
+        <div class="flex justify-between">
+            <span class="text-gray-500">Part {{ $devis->client->mutuelle ?? 'Assurance' }}</span>
+            <span class="font-medium text-blue-600">{{ number_format($devis->part_assurance, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @endif
+        <div class="flex justify-between border-t border-gray-100 pt-2">
+            <span class="text-gray-700 font-medium">Part assuré</span>
+            <span class="font-bold">{{ number_format($devis->part_client, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @if($devis->avance > 0)
+        <div class="flex justify-between">
+            <span class="text-green-700 font-medium">Avance versée</span>
+            <span class="font-bold text-green-700">{{ number_format($devis->avance, 0, ',', ' ') }} FCFA</span>
+        </div>
+        <div class="flex justify-between border-t border-gray-100 pt-2 font-bold
+            {{ $devis->reste > 0 ? 'text-red-600' : 'text-green-600' }}">
+            <span>{{ $devis->reste > 0 ? 'Reste à payer' : 'Soldé ✓' }}</span>
+            @if($devis->reste > 0)
+                <span>{{ number_format($devis->reste, 0, ',', ' ') }} FCFA</span>
             @endif
         </div>
+        @endif
     </div>
-    @endif
+</div>
+@endif
 
     {{-- Notes --}}
     @if($devis->notes)
@@ -330,93 +329,127 @@
         @endif
 
         <form method="POST"
-              action="{{ route('devis.facturer', $devis) }}"
-              class="space-y-4"
-              x-data="{
-                  total: {{ $devis->montant_total }},
-                  partClient: {{ old('part_client', $devis->montant_total) }},
-                  get partAssurance() {
-                      const diff = this.total - this.partClient;
-                      return diff >= 0 ? diff : 0;
-                  }
-              }">
-            @csrf
+      action="{{ route('devis.facturer', $devis) }}"
+      class="space-y-4"
+      x-data="{
+          total: {{ $devis->montant_total }},
+          partClient: {{ old('part_client', $devis->montant_total) }},
+          avance: {{ old('avance', $devis->montant_total) }},
+          get partAssurance() {
+              const diff = this.total - this.partClient;
+              return diff >= 0 ? diff : 0;
+          },
+          get reste() {
+              return Math.max(0, this.partClient - this.avance);
+          },
+          get estSolde() {
+              return this.avance >= this.partClient;
+          }
+      }">
+    @csrf
 
-            {{-- Montant total (lecture seule) --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Montant total</label>
-                <div class="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm font-bold text-gray-900">
-                    {{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA
-                </div>
-            </div>
+    {{-- Montant total --}}
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Montant total</label>
+        <div class="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm font-bold text-gray-900">
+            {{ number_format($devis->montant_total, 0, ',', ' ') }} FCFA
+        </div>
+    </div>
 
-            {{-- Part assuré / Part assurance --}}
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Part assuré</label>
-                    <input type="number"
-                           name="part_client"
-                           step="1" min="0" :max="total"
-                           x-model.number="partClient"
-                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
-                           required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                        Part {{ $devis->client->mutuelle ?? 'Assurance' }}
-                    </label>
-                    <input type="number"
-                           name="part_assurance"
-                           step="1" min="0"
-                           :value="partAssurance"
-                           x-model.number="partAssurance"
-                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none"
-                           readonly>
-                </div>
-            </div>
+    {{-- Part assuré + Part assurance --}}
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Part assuré</label>
+            <input type="number"
+                   name="part_client"
+                   step="1" min="0" :max="total"
+                   x-model.number="partClient"
+                   @input="avance = Math.min(avance, partClient)"
+                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+                   required>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                Part {{ $devis->client->mutuelle ?? 'Assurance' }}
+            </label>
+            <input type="number"
+                   name="part_assurance"
+                   step="1" min="0"
+                   :value="partAssurance"
+                   x-model.number="partAssurance"
+                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none"
+                   readonly>
+        </div>
+    </div>
 
-            {{-- Barre de répartition visuelle --}}
-            <div>
-                <div class="text-xs text-gray-400 flex justify-between px-1 mb-1.5">
-                    <span>Assuré :
-                        <span class="font-medium text-gray-600"
-                              x-text="partClient.toLocaleString('fr-FR') + ' FCFA'"></span>
-                    </span>
-                    <span>{{ $devis->client->mutuelle ?? 'Assurance' }} :
-                        <span class="font-medium text-gray-600"
-                              x-text="partAssurance.toLocaleString('fr-FR') + ' FCFA'"></span>
-                    </span>
-                </div>
-                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-[#1d9bf0] rounded-full transition-all duration-300"
-                         :style="`width: ${total > 0 ? Math.min((partClient / total) * 100, 100) : 0}%`">
-                    </div>
-                </div>
+    {{-- Barre de répartition --}}
+    <div>
+        <div class="text-xs text-gray-400 flex justify-between px-1 mb-1.5">
+            <span>Assuré : <span class="font-medium text-gray-600" x-text="partClient.toLocaleString('fr-FR') + ' FCFA'"></span></span>
+            <span>{{ $devis->client->mutuelle ?? 'Assurance' }} : <span class="font-medium text-gray-600" x-text="partAssurance.toLocaleString('fr-FR') + ' FCFA'"></span></span>
+        </div>
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full bg-[#1d9bf0] rounded-full transition-all duration-300"
+                 :style="`width: ${total > 0 ? Math.min((partClient / total) * 100, 100) : 0}%`">
             </div>
+        </div>
+    </div>
 
-            {{-- Date d'échéance --}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Date d'échéance</label>
-                <input type="date"
-                       name="date_echeance"
-                       value="{{ old('date_echeance', now()->addDays(30)->format('Y-m-d')) }}"
-                       class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
-                       required>
-            </div>
+    {{-- ── Avance ── --}}
+    <div class="border border-orange-100 bg-orange-50/40 rounded-lg p-3 space-y-2">
+        <label class="block text-sm font-medium text-gray-700">
+            Avance versée
+            <span class="text-gray-400 font-normal text-xs ml-1">(laisser vide = paiement total)</span>
+        </label>
+        <input type="number"
+               name="avance"
+               step="1" min="0"
+               :max="partClient"
+               x-model.number="avance"
+               class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
 
-            {{-- Actions --}}
-            <div class="flex gap-3 pt-1">
-                <button type="button"
-                        @click="factureModal = false"
-                        class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
-                    Annuler
-                </button>
-                <button type="submit"
-                        class="flex-1 px-4 py-2.5 bg-[#0f2447] text-white rounded-lg text-sm hover:bg-[#1a3a6b]">
-                    Créer la facture
-                </button>
+        {{-- Récap avance/reste --}}
+        <div class="space-y-1 pt-1">
+            <div class="flex justify-between text-xs text-gray-500">
+                <span>Part client total</span>
+                <span class="font-medium text-gray-700"
+                      x-text="partClient.toLocaleString('fr-FR') + ' FCFA'"></span>
             </div>
-        </form>
+            <div class="flex justify-between text-xs font-semibold text-green-700">
+                <span>Avance</span>
+                <span x-text="avance.toLocaleString('fr-FR') + ' FCFA'"></span>
+            </div>
+            <div class="flex justify-between text-xs font-bold border-t border-orange-100 pt-1"
+                 :class="reste > 0 ? 'text-red-600' : 'text-green-600'">
+                <span x-text="reste > 0 ? 'Reste à payer' : 'Soldé ✓'"></span>
+                <span x-text="reste > 0 ? reste.toLocaleString('fr-FR') + ' FCFA' : ''"></span>
+            </div>
+        </div>
+    </div>
+
+    {{-- Date d'échéance --}}
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Date d'échéance</label>
+        <input type="date"
+               name="date_echeance"
+               value="{{ old('date_echeance', now()->addDays(30)->format('Y-m-d')) }}"
+               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1d9bf0]"
+               required>
+    </div>
+
+    {{-- Actions --}}
+    <div class="flex gap-3 pt-1">
+        <button type="button" @click="factureModal = false"
+                class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
+            Annuler
+        </button>
+        <button type="submit"
+                class="flex-1 px-4 py-2.5 text-white rounded-lg text-sm font-medium transition-colors"
+                :class="estSolde ? 'bg-[#0f2447] hover:bg-[#1a3a6b]' : 'bg-orange-500 hover:bg-orange-600'">
+            <span x-text="estSolde ? 'Créer la facture' : 'Facturer avec avance'"></span>
+        </button>
+    </div>
+</form>
     </div>
 </div>
 

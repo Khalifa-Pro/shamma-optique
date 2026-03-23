@@ -249,33 +249,44 @@ class DevisController extends Controller
         $request->validate([
             'part_client'    => 'required|numeric|min:0',
             'part_assurance' => 'required|numeric|min:0',
+            'avance'         => 'nullable|numeric|min:0',
             'date_echeance'  => 'required|date',
         ]);
 
+        // ── Vérification stock ───────────────────────────────
         foreach ($devis->articles as $article) {
             if ($article->produit_id && $article->inclus) {
                 $produit = $article->produit;
                 if ($produit->stock_actuel < $article->quantite) {
                     return back()->withErrors([
                         'stock' => "Stock insuffisant pour \"{$produit->designation}\" : "
-                                 . "{$produit->stock_actuel} disponible(s), {$article->quantite} requis."
+                                . "{$produit->stock_actuel} disponible(s), {$article->quantite} requis."
                     ]);
                 }
             }
         }
 
+        // ── Calcul avance ────────────────────────────────────
+        $partClient = (float) $request->part_client;
+        $avance     = $request->filled('avance')
+                        ? min((float) $request->avance, $partClient)
+                        : $partClient; // par défaut = paiement total
+
+        // ── Créer la facture ─────────────────────────────────
         $facture = Facture::create([
             'numero'         => Facture::generateNumero(),
             'devis_id'       => $devis->id,
             'client_id'      => $devis->client_id,
             'montant_total'  => $devis->montant_total,
-            'part_client'    => $request->part_client,
+            'part_client'    => $partClient,
             'part_assurance' => $request->part_assurance,
+            'avance'         => $avance,
             'statut'         => 'en_attente',
             'date_echeance'  => $request->date_echeance,
             'created_by'     => session('user_id'),
         ]);
 
+        // ── Décrémenter le stock ─────────────────────────────
         foreach ($devis->articles as $article) {
             if ($article->produit_id && $article->inclus) {
                 $article->produit->sortie(
@@ -287,19 +298,20 @@ class DevisController extends Controller
             }
         }
 
+        // ── Mettre à jour le devis ───────────────────────────
         $devis->update([
             'statut'         => 'facture',
-            'part_client'    => $request->part_client,
+            'part_client'    => $partClient,
             'part_assurance' => $request->part_assurance,
+            'avance'         => $avance,
         ]);
 
         return redirect()->route('factures.show', $facture)->with('success', 'Facture créée.');
     }
 
-    // ─── Reçu de devis validé (acompte) ─────────────────
+    // ─── Reçu mis à jour ──────────────────────────────────
     public function recu(Request $request, Devis $devis)
     {
-        // Accessible seulement si le devis est validé ou facturé
         abort_if(
             !in_array($devis->statut, ['valide', 'facture']),
             403,
@@ -308,23 +320,23 @@ class DevisController extends Controller
 
         $devis->load(['client', 'ordonnance', 'articles']);
 
-        // Calcul de l'acompte (part_client si renseigné, sinon montant total)
-        $acompte      = $devis->part_client > 0 ? $devis->part_client : $devis->montant_total;
-        $partAssurance = $devis->part_assurance ?? 0;
-        $resteAPayer  = max(0, $devis->montant_total - $acompte - $partAssurance);
+        $partClient    = (float) $devis->part_client;
+        $partAssurance = (float) ($devis->part_assurance ?? 0);
+        $avance        = (float) ($devis->avance ?? $partClient);
+        $resteAPayer   = max(0, $partClient - $avance);
 
         $logoBase64 = LogoService::base64();
 
         if ($request->get('print') == '1') {
             return view('devis.recu-print', compact(
-                'devis', 'acompte', 'partAssurance', 'resteAPayer', 'logoBase64'
+                'devis', 'avance', 'partAssurance', 'resteAPayer', 'logoBase64'
             ));
         }
 
         $pdf = Pdf::loadView('devis.recu-pdf', compact(
-                'devis', 'acompte', 'partAssurance', 'resteAPayer', 'logoBase64'
+                'devis', 'avance', 'partAssurance', 'resteAPayer', 'logoBase64'
             ))
-            ->setPaper([0, 0, 226.77, 453.54], 'portrait'); // 80mm × 160mm (format reçu caisse)
+            ->setPaper([0, 0, 226.77, 453.54], 'portrait');
 
         return $pdf->download('recu-' . $devis->numero . '.pdf');
     }

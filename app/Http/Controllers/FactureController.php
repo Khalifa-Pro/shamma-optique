@@ -74,7 +74,7 @@ class FactureController extends Controller
         return redirect()->route('ventes.index')
             ->with('success', 'Paiement enregistré. Vente ' . $vente->numero . ' créée.');
     }
-    
+
     public function pdf(Request $request, Facture $facture)
     {
         abort_if($facture->statut !== 'payee', 403, 'La facture doit être payée.');

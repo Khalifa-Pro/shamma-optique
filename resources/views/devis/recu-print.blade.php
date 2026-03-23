@@ -264,7 +264,8 @@
 <hr class="sep">
 
 {{-- Totaux --}}
-<div class="section">
+{{-- Totaux --}}
+<div class="section totaux">
     <div class="section-title">Récapitulatif financier</div>
 
     <div class="row">
@@ -279,18 +280,26 @@
     </div>
     @endif
 
-    <div class="total-line">
-        <span>Acompte versé</span>
-        <span>{{ number_format($acompte, 0, ',', ' ') }} FCFA</span>
+    <div class="row">
+        <span class="label">Part assuré</span>
+        <span class="value">{{ number_format($devis->part_client, 0, ',', ' ') }} FCFA</span>
+    </div>
+
+    {{-- Séparateur avant avance --}}
+    <div class="row-total">
+        <span>Avance versée</span>
+        <span>{{ number_format($avance, 0, ',', ' ') }} FCFA</span>
     </div>
 
     @if($resteAPayer > 0)
-    <div class="reste-line">
+    <div class="row-reste">
         <span>Reste à payer</span>
         <span>{{ number_format($resteAPayer, 0, ',', ' ') }} FCFA</span>
     </div>
     @else
-    <div class="solde-ok">✓ Solde intégralement réglé</div>
+    <div class="row" style="color: #27ae60; font-weight: bold; margin-top: 1mm; justify-content: center; font-size: 9px;">
+        ✓ Solde intégralement réglé
+    </div>
     @endif
 </div>
 

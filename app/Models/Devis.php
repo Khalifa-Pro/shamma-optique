@@ -11,15 +11,33 @@ class Devis extends Model
     use HasFactory;
 
     protected $fillable = [
-        'numero', 'client_id', 'ordonnance_id', 'created_by',
-        'magasin', 'valide_at', 'valide_by',
-        'part_assurance', 'part_client',
+    'numero', 'client_id', 'ordonnance_id', 'created_by',
+    'magasin', 'valide_at', 'valide_by',
+    'part_assurance', 'part_client',
+    'avance',        // ← nouveau
         'montant_total', 'statut', 'notes',
     ];
 
     protected $casts = [
         'valide_at' => 'datetime',
+        'avance'    => 'decimal:2',  // ← nouveau
     ];
+
+    // ─── Accesseurs avance ───────────────────────────────
+    public function getResteAttribute(): float
+    {
+        return max(0, (float)$this->part_client - (float)$this->avance);
+    }
+
+    public function getEstSoldeAttribute(): bool
+    {
+        return (float)$this->avance >= (float)$this->part_client;
+    }
+
+    public function getAAvancePartielleAttribute(): bool
+    {
+        return (float)$this->avance > 0 && (float)$this->avance < (float)$this->part_client;
+    }
 
     // ─── Relations ───────────────────────────────────────
     public function client()      { return $this->belongsTo(Client::class); }
