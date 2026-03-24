@@ -14,9 +14,22 @@ class VenteController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->get('search');
+        $search    = $request->get('search');
+        $dateDebut = $request->get('date_debut');
+        $dateFin   = $request->get('date_fin');
 
-        $ventes = Vente::with('client')
+        // ── Plage active (défaut : tout le mois en cours) ──
+        $debut = $dateDebut
+            ? Carbon::parse($dateDebut)->startOfDay()
+            : Carbon::now()->startOfMonth();
+
+        $fin = $dateFin
+            ? Carbon::parse($dateFin)->endOfDay()
+            : Carbon::now()->endOfDay();
+
+        // ── Requête ventes ────────────────────────────────
+        $query = Vente::with('client')
+            ->whereBetween('date_paiement', [$debut, $fin])
             ->when($search, fn($q) => $q
                 ->where('numero', 'like', "%$search%")
                 ->orWhereHas('client', fn($q) => $q
@@ -24,21 +37,24 @@ class VenteController extends Controller
                     ->orWhere('prenom', 'like', "%$search%")
                 )
             )
-            ->latest('date_paiement')
-            ->paginate(15)
-            ->withQueryString();
+            ->latest('date_paiement');
 
-        $totalCA           = Vente::sum('montant_total');
-        $caMonth           = Vente::whereYear('date_paiement', now()->year)
-                                ->whereMonth('date_paiement', now()->month)
-                                ->sum('montant_total');
-        $totalPartClient   = Vente::sum('part_client');
-        $totalPartAssurance = Vente::sum('part_assurance');
+        $ventes = $query->paginate(15)->withQueryString();
+
+        // ── Stats sur la plage filtrée ────────────────────
+        $statsQuery = Vente::whereBetween('date_paiement', [$debut, $fin]);
+
+        $totalCA            = (clone $statsQuery)->sum('montant_total');
+        $caMonth            = (clone $statsQuery)->sum('montant_total'); // = totalCA sur la plage
+        $totalPartClient    = (clone $statsQuery)->sum('part_client');
+        $totalPartAssurance = (clone $statsQuery)->sum('part_assurance');
 
         return view('ventes.index', compact(
             'ventes', 'search',
             'totalCA', 'caMonth',
-            'totalPartClient', 'totalPartAssurance'
+            'totalPartClient', 'totalPartAssurance',
+            'dateDebut', 'dateFin',
+            'debut', 'fin',
         ));
     }
     // ─────────────────────────────────────────────────────

@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/ProduitController.php
 
 namespace App\Http\Controllers;
 
@@ -15,15 +14,16 @@ class ProduitController extends Controller
         $categorie = $request->input('categorie');
 
         $produits = Produit::query()
-            ->when($search, fn($q) => $q->where('designation', 'like', "%$search%")
-                                        ->orWhere('marque', 'like', "%$search%")
-                                        ->orWhere('reference', 'like', "%$search%"))
+            ->where('actif', true)
+            ->when($search, fn($q) => $q
+                ->where('designation', 'like', "%$search%")
+                ->orWhere('marque', 'like', "%$search%")
+                ->orWhere('reference', 'like', "%$search%"))
             ->when($categorie, fn($q) => $q->where('categorie', $categorie))
             ->orderBy('designation')
             ->paginate(20)
             ->withQueryString();
 
-        // Produits en alerte (stock faible ou rupture)
         $alertes = Produit::where('actif', true)
             ->whereColumn('stock_actuel', '<=', 'stock_minimum')
             ->orderBy('stock_actuel')
@@ -61,7 +61,6 @@ class ProduitController extends Controller
             'created_by' => session('user_id'),
         ]);
 
-        // Enregistrer le stock initial comme mouvement d'entrée
         if ($data['stock_actuel'] > 0) {
             $produit->mouvements()->create([
                 'type'        => 'entree',
@@ -92,7 +91,6 @@ class ProduitController extends Controller
             'notes'         => 'nullable|string',
         ]);
 
-        // Si le stock a changé manuellement → enregistrer un ajustement
         if ((int)$data['stock_actuel'] !== $produit->stock_actuel) {
             $produit->mouvements()->create([
                 'type'        => 'ajustement',
@@ -113,14 +111,11 @@ class ProduitController extends Controller
 
     public function destroy(Produit $produit)
     {
-        // Soft delete : désactiver plutôt que supprimer
-        // pour préserver l'historique des mouvements
         $produit->update(['actif' => false]);
 
-        return back()->with('success', 'Produit désactivé.');
+        return back()->with('success', "Produit « {$produit->designation} » désactivé.");
     }
 
-    // ─── Entrée de stock manuelle (réapprovisionnement) ───
     public function entree(Request $request, Produit $produit)
     {
         $data = $request->validate([
